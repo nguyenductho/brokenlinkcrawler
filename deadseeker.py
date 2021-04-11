@@ -32,11 +32,21 @@ class LinkParser(HTMLParser):
         while self.pages_to_check:
             page = self.pages_to_check.pop()
             req = Request(page, headers={'User-Agent': agent})
-            res = request.urlopen(req)
+            try:
+                res = request.urlopen(req)
+            except Exception as e: 
+                print(e)
+                print(page)
+                continue
             if 'html' in res.headers['content-type']:
                 with res as f:
                     body = f.read().decode('utf-8', errors='ignore')
-                    self.feed(body)
+                    try:
+                        self.feed(body)
+                    except ValueError as e:
+                        print(e)
+                        print(res)
+                        continue
 
     def handle_starttag(self, tag, attrs):
         '''Override parent method and check tag for our attributes'''
@@ -59,6 +69,10 @@ class LinkParser(HTMLParser):
             print(f'URLError: {e.reason} - {link}')  # (e.g. conn. refused)
         except ValueError as e:
             print(f'ValueError {e} - {link}')  # (e.g. missing protocol http)
+        except Exception as e:
+            print(e)
+            print('Invalid Link: ' + link)
+            return
         else:
             if self.verbose:
                 print(f'{status} - {link}')
